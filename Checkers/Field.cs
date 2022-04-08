@@ -20,9 +20,9 @@ namespace Checkers
             EmptyMark = empty;
             Initialization();
         }
-        public void Step(Man man, Coordinate destination)
+        public void Step(Man man, int row, int column)
         {
-            man.Step(destination);
+            man.Step(row, column);
             Rewrite();
         }
 
@@ -33,10 +33,10 @@ namespace Checkers
                     _field[i][j] = EmptyMark;
 
             foreach (var man in PlayerOne.Men)
-                _field[man.Coordinate.X][man.Coordinate.Y] = man.Mark;
+                _field[man.Row][man.Column] = man.Mark;
 
             foreach (var man in PlayerTwo.Men)
-                _field[man.Coordinate.X][man.Coordinate.Y] = man.Mark;
+                _field[man.Row][man.Column] = man.Mark;
         }
         private void Initialization()
         {

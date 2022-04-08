@@ -21,6 +21,7 @@ namespace Checkers
             Initialization();
         }
         public bool KillMan(Man man) => Men.Remove(man);
+        public Man? GetMan(int row, int column) => Men.FirstOrDefault(x => x.Row == row && x.Column == column);
 
         private void Initialization()
         {
@@ -31,12 +32,12 @@ namespace Checkers
                     if (CanMove)
                     {
                         if ((x == 5 || x == 7) && y % 2 == 0 || x == 6 && y % 2 != 0)
-                            Men.Add(new Man(new Coordinate(x, y), Mark));
+                            Men.Add(new Man(x, y, Mark));
                     }
                     else
                     {
                         if ((x == 0 || x == 2) && y % 2 != 0 || x == 1 && y % 2 == 0)
-                            Men.Add(new Man(new Coordinate(x, y), Mark));
+                            Men.Add(new Man(x, y, Mark));
                     }
                 }
             }

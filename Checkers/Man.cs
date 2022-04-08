@@ -8,16 +8,22 @@ namespace Checkers
 {
     public class Man
     {
-        public Coordinate Coordinate { get; private set; }
+        public int Row { get; private set; }
+        public int Column { get; private set; }
         public string Mark { get; private set; }
         public bool IsKing { get; private set; }
-        public Man(Coordinate coordinate, string mark)
+        public Man(int row, int column, string mark)
         {
-            Coordinate = coordinate;
+            Row = row;
+            Column = column;
             Mark = mark;
             IsKing = false;
         }
-        public void Step(Coordinate coordinate) => Coordinate = coordinate;
+        public void Step(int row, int column)
+        {
+            Row = row;
+            Column = column;
+        }
         public void Upgrade()
         {
             Mark = Mark.ToUpper();

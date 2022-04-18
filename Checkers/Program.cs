@@ -11,8 +11,11 @@ namespace Checkers
             Field field = new Field(player1, player2);
 
             ConsoleView view = new ConsoleView(field);
-
-            view.Step(player1);
+            while (true)
+            {
+                view.Step(player1);
+                view.Step(player2);
+            }
         }
     }
 }

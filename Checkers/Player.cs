@@ -11,17 +11,28 @@ namespace Checkers
         public string Name { get; private set; }
         public string Mark { get; private set; }
         public List<Man> Men { get; private set; }
-        public bool CanMove { get; private set; }
-        public Player(string name, string mark, bool canMove = false)
+        public bool IsBeginner { get; private set; }
+        public Player(string name, string mark, bool isBeginner = false)
         {
             Name = name;
             Mark = mark.ToLower();
-            CanMove = canMove;
+            IsBeginner = isBeginner;
             Men = new List<Man>();
             Initialization();
         }
         public bool KillMan(Man man) => Men.Remove(man);
-        public Man? GetMan(int row, int column) => Men.FirstOrDefault(x => x.Row == row && x.Column == column);
+        //public Man? GetMan(int row, int column) => Men.FirstOrDefault(x => x.Row == row && x.Column == column);
+        public bool TryGetMan(int row, int column, out Man man)
+        {
+            if (IsManExist(row, column))
+            {
+                man = Men.First(x => x.Row == row && x.Column == column);
+                return true;
+            }
+            man = new Man();
+            return false;
+        }
+        public bool IsManExist(int row, int column) => Men.Any(x => x.Row == row && x.Column == column);
 
         private void Initialization()
         {
@@ -29,7 +40,7 @@ namespace Checkers
             {
                 for (int y = 0; y < 8; y++)
                 {
-                    if (CanMove)
+                    if (IsBeginner)
                     {
                         if ((x == 5 || x == 7) && y % 2 == 0 || x == 6 && y % 2 != 0)
                             Men.Add(new Man(x, y, Mark));

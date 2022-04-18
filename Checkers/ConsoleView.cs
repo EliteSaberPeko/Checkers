@@ -23,11 +23,13 @@ namespace Checkers
             for (int x = 0; x < field.Length; x++)
                 Console.WriteLine($"{x}|{string.Join("|", field[x])}|");
         }
-        private Man? ChooseMan(Player player)
+        private Man ChooseMan(Player player)
         {
-            Man? man;
-            do
+            Man man = new Man();
+            bool wrongMan = true;
+            while (wrongMan)
             {
+                Console.WriteLine("Ходит: " + player.Name);
                 PrintField();
                 int x, y;
                 do
@@ -39,27 +41,38 @@ namespace Checkers
                     Console.Write("Введите номер столбца шашки: ");
                 } while (!int.TryParse(Console.ReadLine(), out y));
                 Console.Clear();
-                man = player.GetMan(x, y);
-                if (man == null)
+                wrongMan = !player.TryGetMan(x, y, out man);
+                if (wrongMan)
                     Console.WriteLine("Шашка не найдена!");
-            } while (man == null);
+            }
             return man;
         }
         public void Step(Player player)
         {
-            var man = ChooseMan(player);
-            PrintField();
-            int x, y;
-            do
-            {
-                Console.Write("Введите номер строки назначения шашки: ");
-            } while (!int.TryParse(Console.ReadLine(), out x));
-            do
-            {
-                Console.Write("Введите номер столбца назначения шашки: ");
-            } while (!int.TryParse(Console.ReadLine(), out y));
             Console.Clear();
-            _field.Step(man, x, y);
+            bool isSuccess = false;
+            while (!isSuccess)
+            {
+                var man = ChooseMan(player);
+                Console.WriteLine("Ходит: " + player.Name);
+                PrintField();
+                int x, y;
+                do
+                {
+                    Console.Write("Введите номер строки назначения шашки: ");
+                } while (!int.TryParse(Console.ReadLine(), out x));
+                do
+                {
+                    Console.Write("Введите номер столбца назначения шашки: ");
+                } while (!int.TryParse(Console.ReadLine(), out y));
+                Console.Clear();
+                isSuccess = _field.Step(man, x, y);
+                if (!isSuccess)
+                {
+                    Console.Clear();
+                    Console.WriteLine("Невозможно сделать ход!");
+                }
+            }
             PrintField();
         }
     }

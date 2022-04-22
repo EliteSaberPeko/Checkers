@@ -63,6 +63,7 @@ namespace Checkers
         private bool CanMove(Man man, int row, int column, out bool isContinue)
         {
             isContinue = false;
+            int rowForUpgrade;
             if (!IsAvailableCells(row, column))
                 return false;
 
@@ -73,11 +74,13 @@ namespace Checkers
             {
                 player = PlayerOne;
                 enemy = PlayerTwo;
+                rowForUpgrade = 0;
             }
             else
             {
                 player = PlayerTwo;
                 enemy = PlayerOne;
+                rowForUpgrade = _field.Length - 1;
             }
 
             List<Route> priorityMoves = new List<Route>();
@@ -111,6 +114,9 @@ namespace Checkers
                     man.Step(row, column);
                 }
             }
+
+            if (result && row == rowForUpgrade)
+                man.Upgrade();
 
             return result;//пока без дамок
         }

@@ -66,12 +66,14 @@ namespace Checkers
                     Console.Write("Введите номер столбца назначения шашки: ");
                 } while (!int.TryParse(Console.ReadLine(), out y));
                 Console.Clear();
-                isSuccess = _field.Step(man, x, y);
+                isSuccess = _field.Step(man, x, y, out bool isContinue);
                 if (!isSuccess)
                 {
                     Console.Clear();
                     Console.WriteLine("Невозможно сделать ход!");
                 }
+                if (isContinue)
+                    isSuccess = false;
             }
             PrintField();
         }

@@ -19,12 +19,9 @@ namespace Checkers
             Mark = mark;
             IsKing = false;
         }
-        public Man()
+        public Man() : this(-1, -1, "")
         {
-            Row = -1;
-            Column = -1;
-            Mark = "";
-            IsKing = false;
+
         }
         public void Step(int row, int column)
         {

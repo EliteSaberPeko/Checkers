@@ -20,13 +20,14 @@ namespace Checkers
             EmptyMark = empty;
             Initialization();
         }
-        public bool Step(Man man, int row, int column)
+        public bool Step(Man man, int row, int column, out bool isContinue)
         {
-            if (!CanMove(man, ref row, ref column))
-                return false;
-            man.Step(row, column);
-            Rewrite();
-            return true;
+            if (CanMove(man, row, column, out isContinue))
+            {
+                Rewrite();
+                return true;
+            }
+            return false;
         }
 
         private void Rewrite()
@@ -59,10 +60,13 @@ namespace Checkers
             }
             return false;
         }
-        private bool CanMove(Man man, ref int row, ref int column)
+        private bool CanMove(Man man, int row, int column, out bool isContinue)
         {
+            isContinue = false;
             if (!IsAvailableCells(row, column))
                 return false;
+
+            bool result = false;
 
             Player player, enemy;
             if (PlayerOne.Mark == man.Mark)
@@ -76,67 +80,70 @@ namespace Checkers
                 enemy = PlayerOne;
             }
 
-            if (player.TryGetMan(row, column, out _))
-                return false;
+            List<Route> priorityMoves = new List<Route>();
+            List<Route> possibleMoves = new List<Route>();
+            foreach (Man m in player.Men)
+                CheckAvailableMoves(m, player, enemy, ref priorityMoves, ref possibleMoves);
 
+            if(priorityMoves.Any())
+            {
+                var route = priorityMoves.FirstOrDefault(x => x.PlayersMan == man && x.Row == row && x.Column == column);
+                if(route != null && route.TryGetEnemysMan(out var enemysMan))
+                {
+                    enemy.KillMan(enemysMan);
+                    result = true;
+
+                    man.Step(row, column);
+
+                    priorityMoves.Clear();
+                    possibleMoves.Clear();
+                    CheckAvailableMoves(man, player, enemy, ref priorityMoves, ref possibleMoves);
+                    if (priorityMoves.Any())
+                        isContinue = true;
+                }
+            }
+            else
+            {
+                var route = possibleMoves.FirstOrDefault(x => x.PlayersMan == man && x.Row == row && x.Column == column);
+                if (route != null)
+                {
+                    result = true;
+                    man.Step(row, column);
+                }
+            }
+
+            return result;//пока без дамок
+        }
+        private bool IsStepBack(int row, int rowDestination, bool isBeginner) => isBeginner ? row < rowDestination : row > rowDestination;
+        private void CheckAvailableMoves(Man man, Player player, Player enemy, ref List<Route> priorityMoves, ref List<Route> possibleMoves)
+        {
             if (man.IsKing)
             {
                 //тут дамки
             }
             else
             {
-                if (IsStepBack(man.Row, row, player.IsBeginner))
-                    return false;
+                int rowDirection = player.IsBeginner ? -1 : 1;  //up   | down
+                int[] columnDirections = new int[2] { -1, 1 };  //left | right
 
-                int stepRow = Math.Abs(man.Row - row);
-                int stepColumn = Math.Abs(man.Column - column);
-                bool isAttack = stepRow == 2 && stepColumn == 2;
-                bool isCorrectStep = isAttack || (stepRow == 1 && stepColumn == 1);
-                if (!isCorrectStep)
-                    return false;
-
-                if (isAttack)
+                
+                foreach (int columnDirection in columnDirections)
                 {
-                    stepRow = man.Row + ((row - man.Row) / 2);
-                    stepColumn = man.Column + ((column - man.Column) / 2);
-
-                    if (player.IsManExist(stepRow, stepColumn))
-                        return false;
-                    Man manFromDestinationCell;
-                    if (enemy.TryGetMan(stepRow, stepColumn, out manFromDestinationCell))
+                    int stepRow = man.Row + rowDirection;
+                    int stepColumn = man.Column + columnDirection;
+                    if (enemy.TryGetMan(stepRow, stepColumn, out var enemyMan))
                     {
-                        if (enemy.IsManExist(row, column) || player.IsManExist(row, column))
-                            return false;
-                        enemy.KillMan(manFromDestinationCell);
-                        return true;
+                        stepRow += rowDirection;
+                        stepColumn += columnDirection;
+                        if (IsAvailableCells(stepRow, stepColumn) && !enemy.IsManExist(stepRow, stepColumn) && !player.IsManExist(stepRow, stepColumn) )
+                            priorityMoves.Add(new Route(man, enemyMan, stepRow, stepColumn));
                     }
-                    else
-                        return false;
-                }
-                else
-                {
-                    return !(enemy.IsManExist(row, column) || player.IsManExist(row, column));
-                    //manFromDestinationCell = enemy.GetMan(row, column);
-                    //if (manFromDestinationCell == null)
-                    //    return true;
-                    //else
-                    //{
-                    //    stepRow = man.Row + ((row - man.Row) * 2);
-                    //    stepColumn = man.Column + ((column - man.Column) * 2);
-                    //    if (enemy.GetMan(stepRow, stepColumn) != null || player.GetMan(stepRow, stepColumn) != null)
-                    //    {
-                    //        return false;
-                    //    }
-                    //    enemy.KillMan(manFromDestinationCell);
-                    //    row = stepRow;
-                    //    column = stepColumn;
-                    //    return true;
-                    //}
+                    else if (!player.IsManExist(stepRow, stepColumn))
+                    {
+                        possibleMoves.Add(new Route(man, stepRow, stepColumn));
+                    }
                 }
             }
-
-            return false;//пока без дамок
         }
-        private bool IsStepBack(int row, int rowDestination, bool isBeginner) => isBeginner ? row < rowDestination : row > rowDestination;
     }
 }

@@ -9,6 +9,7 @@ namespace Checkers
     public class ConsoleView
     {
         private Field _field;
+        private bool _isGameOver = false;
         public ConsoleView(Field field)
         {
             _field = field;
@@ -22,6 +23,55 @@ namespace Checkers
             Console.WriteLine($" |{string.Join("|", range)}|");
             for (int x = 0; x < field.Length; x++)
                 Console.WriteLine($"{x}|{string.Join("|", field[x])}|");
+        }
+        public void Start(Player player1, Player player2)
+        {
+            _field.GameOverNotify += IsGameOver;
+            while (!_isGameOver)
+            {
+                Step(player1);
+                if (_isGameOver)
+                    break;
+                Step(player2);
+            }
+        }
+        private void Step(Player player)
+        {
+            Console.Clear();
+            bool isSuccess = false;
+            bool isContinue = false;
+            Man? man = null;
+            while (!isSuccess)
+            {
+                if (!isContinue)
+                    man = ChooseMan(player);
+                Console.WriteLine("Ходит: " + player.Name);
+                PrintField();
+                int x, y;
+                do
+                {
+                    Console.Write("Введите номер строки назначения шашки: ");
+                } while (!int.TryParse(Console.ReadLine(), out x));
+                do
+                {
+                    Console.Write("Введите номер столбца назначения шашки: ");
+                } while (!int.TryParse(Console.ReadLine(), out y));
+                Console.Clear();
+                isSuccess = _field.Step(man, x, y, out isContinue);
+                if (!isSuccess)
+                {
+                    Console.Clear();
+                    Console.WriteLine("Невозможно сделать ход!");
+                }
+                if (isContinue)
+                {
+                    isSuccess = false;
+                    player.TryGetMan(x, y, out man);
+                }
+            }
+
+            //isGameOver = GameOver(player, endOfGame);
+            PrintField();
         }
         private Man ChooseMan(Player player)
         {
@@ -47,35 +97,27 @@ namespace Checkers
             }
             return man;
         }
-        public void Step(Player player)
+        private bool GameOver(Player player, GameStatus endOfGame)
         {
-            Console.Clear();
-            bool isSuccess = false;
-            while (!isSuccess)
+            bool isGameOver = true;
+            switch(endOfGame)
             {
-                var man = ChooseMan(player);
-                Console.WriteLine("Ходит: " + player.Name);
-                PrintField();
-                int x, y;
-                do
-                {
-                    Console.Write("Введите номер строки назначения шашки: ");
-                } while (!int.TryParse(Console.ReadLine(), out x));
-                do
-                {
-                    Console.Write("Введите номер столбца назначения шашки: ");
-                } while (!int.TryParse(Console.ReadLine(), out y));
-                Console.Clear();
-                isSuccess = _field.Step(man, x, y, out bool isContinue);
-                if (!isSuccess)
-                {
-                    Console.Clear();
-                    Console.WriteLine("Невозможно сделать ход!");
-                }
-                if (isContinue)
-                    isSuccess = false;
+                case GameStatus.Victory:
+                    Console.WriteLine($"Победил {player.Name}!");
+                    break;
+                case GameStatus.Draw:
+                    Console.WriteLine("Ничья!");
+                    break;
+                default:
+                    isGameOver = false;
+                    break;
             }
-            PrintField();
+            return isGameOver;
+        }
+        private void IsGameOver(string message)
+        {
+            Console.WriteLine(message);
+            _isGameOver = true;
         }
     }
 }

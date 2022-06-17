@@ -10,12 +10,11 @@ namespace Checkers
             Player player2 = new Player("Two", "O");
             Field field = new Field(player1, player2);
 
-            ConsoleView view = new ConsoleView(field);
-            while (true)
-            {
-                view.Step(player1);
-                view.Step(player2);
-            }
+            /*ConsoleView view = new ConsoleView(field);
+            view.Start(player1, player2);*/
+
+            Pseudographics pseudographics = new Pseudographics(field);
+            pseudographics.Start(player1, player2);
         }
     }
 }

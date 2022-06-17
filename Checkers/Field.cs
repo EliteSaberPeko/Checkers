@@ -8,6 +8,9 @@ namespace Checkers
 {
     public class Field
     {
+        public delegate void GameOverHandler(string message);
+        public event GameOverHandler GameOverNotify;
+
         private string[][] _field = new string[8][];
         public Player PlayerOne { get; private set; }
         public Player PlayerTwo { get; private set; }
@@ -20,9 +23,9 @@ namespace Checkers
             EmptyMark = empty;
             Initialization();
         }
-        public bool Step(Man man, int row, int column, out bool isContinue)
+        public bool Step(Man man, int row, int column, out bool isContinue/*, out GameStatus endOfGame*/)
         {
-            if (CanMove(man, row, column, out isContinue))
+            if (CanMove(man, row, column, out isContinue/*, out endOfGame*/))
             {
                 Rewrite();
                 return true;
@@ -60,12 +63,11 @@ namespace Checkers
             }
             return false;
         }
-        private bool CanMove(Man man, int row, int column, out bool isContinue)
+        private bool CanMove(Man man, int row, int column, out bool isContinue/*, out GameStatus endOfGame*/)
         {
             isContinue = false;
+            //endOfGame = GameStatus.Continue;
             int rowForUpgrade;
-            if (!IsAvailableCells(row, column))
-                return false;
 
             bool result = false;
 
@@ -117,6 +119,21 @@ namespace Checkers
 
             if (result && row == rowForUpgrade)
                 man.Upgrade();
+
+            priorityMoves.Clear();
+            possibleMoves.Clear();
+            foreach (Man m in player.Men)
+                CheckAvailableMoves(m, player, enemy, ref priorityMoves, ref possibleMoves);
+            foreach (Man m in enemy.Men)
+                CheckAvailableMoves(m, enemy, player, ref priorityMoves, ref possibleMoves);
+
+            if (!(priorityMoves.Any() || possibleMoves.Any()))
+                //endOfGame = GameStatus.Draw;
+                GameOverNotify?.Invoke("Ничья!");
+
+            if (!enemy.Men.Any(x => !x.IsKing))//пока нет дамок
+                //endOfGame = GameStatus.Victory;
+                GameOverNotify?.Invoke($"Победил {player.Name}!");
 
             return result;//пока без дамок
         }

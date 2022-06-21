@@ -8,6 +8,9 @@ namespace Checkers
 {
     public class Pseudographics
     {
+        private const string BORDER_CROSS = "\u253C";
+        private const string BORDER_HORIZONTAL = "\u2500\u2500\u2500";
+        private const string BORDER_VERTICAL = "\u2502";
         private readonly int _boardCenter = (Console.WindowWidth - 35) / 2;
         private Field _field;
         private string _gameOverNotification = "";
@@ -15,13 +18,16 @@ namespace Checkers
         {
             _field = field;
         }
-        public void PrintField(int row, int col, Man? man = null)
+        public void PrintField(int row, int col, string? messages = null, Man? man = null)
         {
             var field = _field.Get;
             int[] range = new int[field.Length];
             for (int i = 0; i < field.Length; i++)
                 range[i] = i;
 
+            Console.Clear();
+            if (messages != null)
+                Console.WriteLine(messages);
             Console.CursorLeft = _boardCenter;
             Console.Write("  ");
             for (int i = 0; i < field[0].Length; i++)
@@ -38,9 +44,9 @@ namespace Checkers
                 {
                     if (i == -1)
                         Console.Write("  ");
-                    Console.Write("\u253C");
-                    if(i + 1 < field[x].Length)
-                        Console.Write("\u2500\u2500\u2500");
+                    Console.Write(BORDER_CROSS);
+                    if (i + 1 < field[x].Length)
+                        Console.Write(BORDER_HORIZONTAL);
                 }
                 Console.WriteLine();
                 Console.CursorLeft = _boardCenter;
@@ -48,7 +54,7 @@ namespace Checkers
                 for (int i = 0; i < field[x].Length; i++)
                 {
 
-                    Console.Write("\u2502");
+                    Console.Write(BORDER_VERTICAL);
                     if(man != null && x == man.Row && i == man.Column)
                     {
                         Console.BackgroundColor = ConsoleColor.Green;
@@ -62,7 +68,7 @@ namespace Checkers
                     Console.Write($" {field[x][i]} ");
                     Console.ResetColor();
                 }
-                Console.Write("\u2502");
+                Console.Write(BORDER_VERTICAL);
                 Console.WriteLine();
             }
             Console.CursorLeft = _boardCenter;
@@ -70,9 +76,9 @@ namespace Checkers
             {
                 if (i == -1)
                     Console.Write("  ");
-                Console.Write("\u253C");
+                Console.Write(BORDER_CROSS);
                 if (i + 1 < field[0].Length)
-                    Console.Write("\u2500\u2500\u2500");
+                    Console.Write(BORDER_HORIZONTAL);
             }
             Console.WriteLine();
         }
@@ -89,48 +95,45 @@ namespace Checkers
         }
         private void Step(Player player)
         {
-            Console.Clear();
             int max = _field.Get.Length;
             bool isSuccess = false;
             bool isContinue = false;
             Man man = ChooseMan(player);
             int row = man.Row, col = man.Column;
-            Console.Clear();
-            Console.WriteLine("Продолжает ходить: " + player.Name);
-            PrintField(row, col, man);
+            string message = "Продолжает ходить: " + player.Name + Environment.NewLine;
+            string errorMessage = "";
+            PrintField(row, col, message, man);
             while (!isSuccess)
             {
-                string errorMessage = "";
-                ConsoleKey inputKey = Console.ReadKey().Key;
+                ConsoleKey inputKey = Console.ReadKey(true).Key;
                 switch (inputKey)
                 {
                     case ConsoleKey.Enter:
                         isSuccess = _field.Step(man, row, col, out isContinue);
-                        if (!isSuccess)
-                            errorMessage = "Невозможно сделать ход!";
+                        errorMessage = !isSuccess ? "Невозможно сделать ход!" + Environment.NewLine : "";
                         break;
                     case ConsoleKey.Escape:
-                        Console.Clear();
-                        man = ChooseMan(player);
+                        if (!isContinue)
+                        {
+                            errorMessage = "";
+                            man = ChooseMan(player);
+                            row = man.Row;
+                            col = man.Column;
+                        }
                         break;
                     default:
                         WASDKeys(inputKey, max, ref row, ref col);
                         break;
                 }
-                Console.Clear();
-                if (isContinue)
+                if (isContinue && isSuccess)
                 {
                     isSuccess = false;
                     player.TryGetMan(row, col, out man);
                 }
-                if (errorMessage.Any())
-                    Console.WriteLine(errorMessage);
 
                 if (_gameOverNotification.Any())
-                    Console.WriteLine(_gameOverNotification);
-                else
-                    Console.WriteLine("Продолжает ходить: " + player.Name);
-                PrintField(row, col, man);
+                    message = _gameOverNotification;
+                PrintField(row, col, errorMessage + message, man);
             }
         }
         private Man ChooseMan(Player player)
@@ -139,18 +142,20 @@ namespace Checkers
             int max = _field.Get.Length;
             bool next = true;
             int row = -1, col = -1;
-            var z = player.Men.FirstOrDefault();
-            Console.Clear();
-            Console.WriteLine("Ходит: " + player.Name);
+            var z = player.IsBeginner ?
+                player.Men.OrderBy(x => x.Column).ThenBy(x => x.Row).FirstOrDefault() :
+                player.Men.OrderBy(x => x.Column).ThenByDescending(x => x.Row).FirstOrDefault();
+            
+            string messages = "Ходит: " + player.Name + Environment.NewLine;
             if (z != null)
             {
                 row = z.Row;
                 col = z.Column;
             }
-            PrintField(row, col);
+            PrintField(row, col, messages);
             while (next)
             {
-                ConsoleKey inputKey = Console.ReadKey().Key;
+                ConsoleKey inputKey = Console.ReadKey(true).Key;
                 switch (inputKey)
                 {
                     case ConsoleKey.Enter:
@@ -161,9 +166,7 @@ namespace Checkers
                         WASDKeys(inputKey, max, ref row, ref col);
                         break;
                 }
-                Console.Clear();
-                Console.WriteLine("Ходит: " + player.Name);
-                PrintField(row, col);
+                PrintField(row, col, messages);
             }
             return man;
         }

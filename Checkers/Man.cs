@@ -30,8 +30,11 @@ namespace Checkers
         }
         public void Upgrade()
         {
-            Mark = Mark.ToUpper();
-            IsKing = true;
+            if (!IsKing)
+            {
+                Mark = Mark.ToUpper();
+                IsKing = true;
+            }
         }
     }
 }

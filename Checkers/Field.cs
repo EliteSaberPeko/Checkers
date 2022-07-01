@@ -72,7 +72,7 @@ namespace Checkers
             bool result = false;
 
             Player player, enemy;
-            if (PlayerOne.Mark == man.Mark)
+            if (PlayerOne.Mark == man.Mark.ToLower())
             {
                 player = PlayerOne;
                 enemy = PlayerTwo;
@@ -131,11 +131,11 @@ namespace Checkers
                 //endOfGame = GameStatus.Draw;
                 GameOverNotify?.Invoke("Ничья!");
 
-            if (!enemy.Men.Any(x => !x.IsKing))//пока нет дамок
+            if (!enemy.Men.Any())
                 //endOfGame = GameStatus.Victory;
                 GameOverNotify?.Invoke($"Победил {player.Name}!");
 
-            return result;//пока без дамок
+            return result;
         }
         private bool IsStepBack(int row, int rowDestination, bool isBeginner) => isBeginner ? row < rowDestination : row > rowDestination;
         private void CheckAvailableMoves(Man man, Player player, Player enemy, ref List<Route> priorityMoves, ref List<Route> possibleMoves)
@@ -143,6 +143,38 @@ namespace Checkers
             if (man.IsKing)
             {
                 //тут дамки
+                //после становления дамкой сделать продолжение хода, если есть возможность бить следующую шашку
+                int[] rowDirections = new int[2] { -1, 1 };  //up   | down
+                int[] columnDirections = new int[2] { -1, 1 };  //left | right
+                foreach (int rowDirection in rowDirections)
+                {
+                    foreach (int columnDirection in columnDirections)
+                    {
+                        int stepRow = man.Row;
+                        int stepColumn = man.Column;
+                        while (stepRow < _field.Length && stepRow >= 0 && stepColumn < _field.Length && stepColumn >= 0)
+                        {
+                            stepRow += rowDirection;
+                            stepColumn += columnDirection;
+                            if (enemy.TryGetMan(stepRow, stepColumn, out var enemyMan))
+                            {
+                                int afterEnemyRow = stepRow,
+                                    afterEnemyColumn = stepColumn;
+                                while (afterEnemyRow < _field.Length && afterEnemyRow >= 0 && afterEnemyColumn < _field.Length && afterEnemyColumn >= 0)
+                                {
+                                    afterEnemyRow += rowDirection;
+                                    afterEnemyColumn += columnDirection;
+                                    if (IsAvailableCells(afterEnemyRow, afterEnemyColumn) && !enemy.IsManExist(afterEnemyRow, afterEnemyColumn) && !player.IsManExist(afterEnemyRow, afterEnemyColumn))
+                                        priorityMoves.Add(new Route(man, enemyMan, afterEnemyRow, afterEnemyColumn));
+                                }
+                            }
+                            else if (IsAvailableCells(stepRow, stepColumn) && !player.IsManExist(stepRow, stepColumn))
+                            {
+                                possibleMoves.Add(new Route(man, stepRow, stepColumn));
+                            }
+                        }
+                    }
+                }
             }
             else
             {
@@ -161,7 +193,7 @@ namespace Checkers
                         if (IsAvailableCells(stepRow, stepColumn) && !enemy.IsManExist(stepRow, stepColumn) && !player.IsManExist(stepRow, stepColumn) )
                             priorityMoves.Add(new Route(man, enemyMan, stepRow, stepColumn));
                     }
-                    else if (!player.IsManExist(stepRow, stepColumn))
+                    else if (IsAvailableCells(stepRow, stepColumn) && !player.IsManExist(stepRow, stepColumn))
                     {
                         possibleMoves.Add(new Route(man, stepRow, stepColumn));
                     }

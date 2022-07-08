@@ -9,9 +9,9 @@ namespace Checkers
     public class Field
     {
         public delegate void GameOverHandler(string message);
-        public event GameOverHandler GameOverNotify;
+        public event GameOverHandler? GameOverNotify;
 
-        private string[][] _field = new string[8][];
+        private readonly string[][] _field = new string[8][];
         public Player PlayerOne { get; private set; }
         public Player PlayerTwo { get; private set; }
         public string EmptyMark { get; private set; }
@@ -102,6 +102,9 @@ namespace Checkers
 
                     priorityMoves.Clear();
                     possibleMoves.Clear();
+
+                    Upgrade(result, row, rowForUpgrade, ref man);
+
                     CheckAvailableMoves(man, player, enemy, ref priorityMoves, ref possibleMoves);
                     if (priorityMoves.Any())
                         isContinue = true;
@@ -114,11 +117,12 @@ namespace Checkers
                 {
                     result = true;
                     man.Step(row, column);
+                    Upgrade(result, row, rowForUpgrade, ref man);
                 }
             }
 
-            if (result && row == rowForUpgrade)
-                man.Upgrade();
+            //if (result && row == rowForUpgrade)
+            //    man.Upgrade();
 
             priorityMoves.Clear();
             possibleMoves.Clear();
@@ -137,13 +141,16 @@ namespace Checkers
 
             return result;
         }
+        private static void Upgrade(bool result, int row, int rowForUpgrade, ref Man man)
+        {
+            if (result && row == rowForUpgrade)
+                man.Upgrade();
+        }
         private bool IsStepBack(int row, int rowDestination, bool isBeginner) => isBeginner ? row < rowDestination : row > rowDestination;
         private void CheckAvailableMoves(Man man, Player player, Player enemy, ref List<Route> priorityMoves, ref List<Route> possibleMoves)
         {
             if (man.IsKing)
             {
-                //тут дамки
-                //после становления дамкой сделать продолжение хода, если есть возможность бить следующую шашку
                 int[] rowDirections = new int[2] { -1, 1 };  //up   | down
                 int[] columnDirections = new int[2] { -1, 1 };  //left | right
                 foreach (int rowDirection in rowDirections)
